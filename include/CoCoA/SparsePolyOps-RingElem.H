@@ -1,0 +1,150 @@
+#ifndef CoCoA_SparsePolyOps_RingElem_H
+#define CoCoA_SparsePolyOps_RingElem_H
+
+//   Copyright (c)  2005-2007,2009,2012-2018  John Abbott and Anna M. Bigatti
+
+//   This file is part of the source of CoCoALib, the CoCoA Library.
+
+//   CoCoALib is free software: you can redistribute it and/or modify
+//   it under the terms of the GNU General Public License as published by
+//   the Free Software Foundation, either version 3 of the License, or
+//   (at your option) any later version.
+
+//   CoCoALib is distributed in the hope that it will be useful,
+//   but WITHOUT ANY WARRANTY; without even the implied warranty of
+//   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+//   GNU General Public License for more details.
+
+//   You should have received a copy of the GNU General Public License
+//   along with CoCoALib.  If not, see <http://www.gnu.org/licenses/>.
+
+
+// Header file for the abstract class SparsePolyRingBase etc.
+
+//#include "CoCoA/PPMonoid.H"
+#include "CoCoA/PolyRing.H"
+#include "CoCoA/RingHom.H"
+#include "CoCoA/error.H"
+//#include "CoCoA/ideal.H"
+//#include "CoCoA/FGModule.H"
+#include "CoCoA/SparsePolyRing.H" // for IsSparsePolyRing
+
+#include <iosfwd>
+// using std::ostream;
+//#include <memory>
+// using std::auto_ptr;
+#include <vector>
+// using std::vector;
+
+namespace CoCoA
+{
+
+  //  class symbol;         // fwd decl -- defined in symbol.H
+  //  class matrix;         // fwd decl -- defined in matrix.H
+  class PPMonoid; // fwd decl -- defined in PPMonoid.H
+  class SparsePolyIter; // fwd decl -- defined in SparsePolyIter.H
+
+
+  //-- Pseudo constructors for RingElems owned by SparsePolyRing -----------
+  RingElem monomial(const SparsePolyRing& P, ConstRefPPMonoidElem pp);
+  RingElem monomial(const SparsePolyRing& P, ConstRefRingElem c, ConstRefPPMonoidElem pp);
+  RingElem monomial(const SparsePolyRing& P, const MachineInt& n, ConstRefPPMonoidElem pp);
+  RingElem monomial(const SparsePolyRing& P, const BigInt& N, ConstRefPPMonoidElem pp);
+  RingElem monomial(const SparsePolyRing& P, const BigRat& N, ConstRefPPMonoidElem pp);
+
+  RingElem monomial(const SparsePolyRing& P, const std::vector<long>& expv);
+  RingElem monomial(const SparsePolyRing& P, ConstRefRingElem c, const std::vector<long>& expv);
+  RingElem monomial(const SparsePolyRing& P, const MachineInt& n, const std::vector<long>& expv);
+  RingElem monomial(const SparsePolyRing& P, const BigInt& N, const std::vector<long>& expv);
+  RingElem monomial(const SparsePolyRing& P, const BigRat& N, const std::vector<long>& expv);
+
+  RingElem RandomLinearForm(const ring& P);
+  RingElem RandomLinearForm(const ring& P, long N);
+  //RingElem RandomLinearForm(const ring& P, long lo, long hi); // anon nmsp
+  
+
+  RingElem& PushFront(RingElem& f, ConstRefRingElem c, const std::vector<long>& expv); /// SHOULD BE vector<BigInt> ????
+  RingElem& PushBack(RingElem& f, ConstRefRingElem c, const std::vector<long>& expv); /// SHOULD BE vector<BigInt> ????
+  RingElem& PushFront(RingElem& f, ConstRefRingElem c, ConstRefPPMonoidElem pp); ///< with checks
+  RingElem& PushBack(RingElem& f, ConstRefRingElem c, ConstRefPPMonoidElem pp); ///< with checks
+  //@}
+
+  RingElem ClearDenom(const SparsePolyRing& ZZx, const RingElem& f); // see also PolyRing.H
+
+
+  //-- SparsePolyIter -----------------------------
+  SparsePolyIter BeginIter(ConstRefRingElem f);
+  SparsePolyIter EndIter(ConstRefRingElem f);
+
+  //-- Special functions on RingElems owned by SparsePolyRing --------------
+  long UnivariateIndetIndex(ConstRefRingElem f);  // returns < 0 if not univariate
+  std::vector<long> IndetsIn(ConstRefRingElem f); // indices of indets appearing in f
+  ConstRefPPMonoidElem LPP(ConstRefRingElem f);                 // inline
+  degree wdeg(ConstRefRingElem f);
+  int CmpWDeg(ConstRefRingElem f1, ConstRefRingElem f2);
+  int CmpWDegPartial(ConstRefRingElem f1, ConstRefRingElem f2, long GrDim);  // assumes 0 <= GrDim
+  bool IsHomog(ConstRefRingElem f);
+  bool IsHomogPartial(ConstRefRingElem f, long GrDim);  // assumes 0 <= GrDim
+  RingElem homog(ConstRefRingElem f, ConstRefRingElem h);       ///< homogenize f with indet h (GrDim=1, wdeg(h)=1)
+  RingElem LF(ConstRefRingElem f);
+  RingElem CutLF(RingElem& f);  ///< cut off leading form; **MODIFIES** f
+  RingElem NR(ConstRefRingElem f, const std::vector<RingElem>& v); ///< Normal Remainder (remainder of the Division Algorithm).  If v is a GBasis it gives the Normal Form.
+  std::vector<long> indets(ConstRefRingElem f);
+  struct CoeffPP
+  {
+    CoeffPP(const RingElem& c, const PPMonoidElem& t): myCoeff(c), myPP(t) {}
+    RingElem myCoeff;
+    PPMonoidElem myPP;
+  };
+  std::ostream& operator<<(std::ostream& out, const CoeffPP& term);
+
+  std::vector<CoeffPP> CoefficientsWRT(ConstRefRingElem f, const std::vector<long>& indets);
+  std::vector<CoeffPP> CoefficientsWRT(ConstRefRingElem f, ConstRefRingElem x);
+  std::vector<RingElem> CoeffVecWRT(ConstRefRingElem f, ConstRefRingElem x);
+  RingElem ContentWRT(ConstRefRingElem f, const std::vector<long>& indets);
+  RingElem ContentWRT(ConstRefRingElem f, ConstRefRingElem x);
+  void CRTPoly(RingElem& f, BigInt& M,
+               ConstRefRingElem f1, BigInt M1,
+               ConstRefRingElem f2, BigInt M2);
+  RingElem RatReconstructPoly(ConstRefRingElem fCRT, BigInt modulus);
+
+
+  //-----------------------------------------------
+  RingElem CoeffHeight(ConstRefRingElem f);
+
+  bool IsPalindromic(ConstRefRingElem f); // univariate only
+  RingElem reverse(ConstRefRingElem f); // univariate only
+  RingElem reverse(ConstRefRingElem f, ConstRefPPMonoidElem t);
+
+  RingElem graeffe(ConstRefRingElem f);
+  RingElem graeffe3(ConstRefRingElem f);
+
+
+
+  //----------------------------------------------------------------------
+  // Inline functions
+
+  inline ConstRefPPMonoidElem LPP(ConstRefRingElem f)
+  {
+    if (!IsSparsePolyRing(owner(f)))
+      CoCoA_ERROR(ERR::NotElemSparsePolyRing, "LPP(f)");
+    if (IsZero(f)) CoCoA_ERROR(ERR::ZeroRingElem, "LPP(f)");
+    return SparsePolyRingPtr(owner(f))->myLPP(raw(f));
+  }
+
+
+} // end of namespace CoCoA
+
+
+
+// RCS header/log in the next few lines
+// $Header: /Volumes/Home_1/cocoa/cvs-repository/CoCoALib-0.99/include/CoCoA/SparsePolyOps-RingElem.H,v 1.2 2018/08/06 13:38:54 bigatti Exp $
+// $Log: SparsePolyOps-RingElem.H,v $
+// Revision 1.2  2018/08/06 13:38:54  bigatti
+// -- added functins from SparsePolyOps.H
+//
+// Revision 1.1  2018/05/18 16:34:52  bigatti
+// -- split SparsePolyOps-RingElem from SparsePolyRing
+//
+
+#endif

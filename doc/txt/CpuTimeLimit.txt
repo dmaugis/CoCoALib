@@ -1,0 +1,113 @@
+      CpuTimeLimit
+      Copyright (c)  2017,2018 John Abbott, Anna M. Bigatti
+      GNU Free Documentation License, Version 1.2
+%!includeconf: ../aux-txt2tags/config.t2t
+      TeXTitle{CpuTimeLimit}{John Abbott, Anna M. Bigatti}
+
+
+== Examples ==[examples]
+%----------------------------------------------------------------------
+- [ex-CpuTimeLimit1.C ../../examples/index.html#ex-CpuTimeLimit1.C]
+- [ex-CpuTimeLimit2.C ../../examples/index.html#ex-CpuTimeLimit2.C]
+-
+
+== User documentation for CpuTimeLimit ==
+%======================================================================
+
+An object of type ``CpuTimeLimit`` may be used to "limit" the CPU time
+taken by a computation: if the computation takes too long then an
+exception (of type ``InterruptedByTimeout``) is thrown.
+
+More precisely, when creating a ``CpuTimeLimit`` object you must specify
+a time limit in seconds (as a positive ``double``); there is currently an
+upper limit of one million seconds.  You must yourself explicitly check
+whether the time limit has been reached by calling the member function
+``operator()``.  This call checks whether the allowed time has been
+exceeded: if not, it just returns; otherwise it throws an exception
+of type ``TimeoutException`` (derived from ``CoCoA::ErrorInfo``).
+
+
+**IMPORTANT** CoCoALib checks for timeout **only when** the member
+function ``CheckForTimeout::operator()`` is called.  So it is possible
+that CoCoALib does not immediately "notice" that timeout has occurred;
+this depends on how often ``operator()`` is called.
+
+
+=== Constructor ===[constructors]
+%----------------------------------------------------------------------
+
+There is one real constructor, and one pseudo-constructor:
+- ``CpuTimeLimit(seconds)`` where ``seconds`` is a positive ``double``; the measurement of CPU use begins immediately
+- ``NoCpuTimeLimit()`` returns a ``CpuTimeLimit`` object which has infinite timeout
+-
+
+
+=== Operations ===[operations]
+%----------------------------------------------------------------------
+
+Let ``CheckForTimeout`` be an object of type ``CpuTimeLimit``.
+There are two operations:
+- ``CheckForTimeout(context)`` -- does nothing unless timeout has occurred, when it throws a ``TimeoutException`` object; ``context`` is a string literal which is copied into the "context" field of the exception
+- ``CheckForTimeout.myPrepareForNewLoop()`` -- if the same ``CpuTimeLimit`` object is to be used inside more than one loop, then call this before every loop (except the first one)
+- ``IsUnlimited(CheckForTimeout)``  -- return ``true`` iff ``CheckForTimeout`` was created by ``NoCpuTimeLimit``
+-
+
+
+=== Exception ===[exceptions]
+%----------------------------------------------------------------------
+
+There is one class for exceptions:
+- ``TimeoutException(context)`` -- the arg ``context`` is a string literal indicating where the timeout was detected (usually it is a good idea to use the name of the function which was interrupted)
+-
+
+The class ``TimeoutException`` derives from ``ErrorInfo``.
+
+
+== Maintainer documentation ==
+%======================================================================
+
+This is the third design.  The first was based on SIGVTALRM, but it was not
+clear how portable that would be.  The second was based on
+``CheckForInterrupt``, but the calls to ``CpuTime`` were too costly (and it
+depended on a global variable).  So this new, third design is based on
+``ProgressReporter``: it assumes that the times between successive clock
+checks do not vary too much.
+
+The idea is to check the actual cpu time only occasionally, and not every
+time ``operator()`` is called.  It uses a similar strategy to that of
+``ProgressReporter`` which assumes that calls to ``operator()`` occur at
+fairly regular intervals.
+
+The private data field ``myDoCheckAtThisCount`` has a special role
+if its value is zero: it means that the ``CpuTimeLimit`` object has
+infinite timeout, so should never check cpu usage.
+
+
+
+== Bugs, shortcomings and other ideas ==
+%======================================================================
+
+Perhaps arrange for ``myDoCheckAtThisCount`` to be reduced when
+getting close to ``myTriggerTime``?
+
+Inconvenient having to pass ``CpuTimeLimit`` as explicit parameters;
+but how else to do this in a threadsafe way?
+
+A normal call to ``CpuTime()`` may not work as desired in a multithreaded
+context.  It is not clear how to solve this portably.
+
+
+
+== Main changes ==
+%======================================================================
+
+**2018**
+- May (v0.99570): major revision, now cheaper and multithread compatible.
+
+**2017**
+- July (v0.99560): first release; major revision
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% For "txt2tags safety" leave 2 empty lines after the last line of text.

@@ -1,0 +1,50 @@
+-----------------------------------------------------------------------
+-- double evaluation: https://cocoa.dima.unige.it/redmine/issues/946
+-----------------------------------------------------------------------
+TestCount := 0;
+PrintInfo := false;
+
+define TEST_ASSERT(A,B)
+  toplevel TestCount;
+  toplevel PrintInfo;
+  TestCount := TestCount+1;
+  If A<>B Then
+    error("TEST: " + Sprint(A) + " <> " + Sprint(B));
+  endif;
+  if PrintInfo then print "."; EndIf;
+enddefine; -- TEST_ASSERT
+
+use R ::= QQ[x];
+define f(x)
+  TopLevel COUNT;
+  incr(ref COUNT);
+  return x;
+enddefine; -- f
+
+COUNT := 0;
+I1 := ideal(R, GBasis(ideal(R, [f(x)]))); -- was OK
+TEST_ASSERT(COUNT, 1);
+
+COUNT := 0;
+I1 := ideal(GBasis(ideal([f(x)]))); -- used to give 4
+TEST_ASSERT(COUNT, 1);
+
+COUNT := 0;
+I1 := ideal(GBasis(ideal(f(x),x,x))); -- used to give 4
+---- TEST_ASSERT(COUNT, 1);
+
+COUNT := 0;
+I1 := len([f(x)]); -- used to give 4
+TEST_ASSERT(COUNT, 1);
+
+COUNT := 0;
+I1 := syz([f(x)]); -- used to give 2
+TEST_ASSERT(COUNT, 1);
+
+COUNT := 0;
+I1 := homog([f(x)], x); -- used to give 4
+TEST_ASSERT(COUNT, 1);
+
+COUNT := 0;
+I1 := gcd([f(x),x]); -- used to give 2
+TEST_ASSERT(COUNT, 1);

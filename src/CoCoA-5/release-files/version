@@ -1,0 +1,7 @@
+##################################################################
+# Version information: major, minor, minor-minor.
+# The values must be positive integers (without any whitespace before or after).
+
+COCOA5_VER_MAJ=5
+COCOA5_VER_MIN=2
+COCOA5_VER_MINMIN=4

@@ -1,0 +1,119 @@
+-------------------------------------------------------
+-- (2014-05-02) sort had a slippery bug making it give wrong answers
+length := 33;
+for j:=1 to 1000 do
+  l1 := [random(0,100) | i in 1..length];
+  l2 := sorted(l1);
+  for i:=1 to len(l2)-1 do
+    if l2[i] > l2[i+1] then
+      println "l1=",l1,"   and l2=",l2;
+    endif;
+  endfor;
+endfor;
+
+-- There was no bug for lists shorter than 33, but here's a quick test anyway
+length := 9;
+for j:=1 to 1000 do
+  l1 := [random(0,100) | i in 1..length];
+  l2 := sorted(l1);
+  for i:=1 to len(l2)-1 do
+    if l2[i] > l2[i+1] then
+      println "l1=",l1,"   and l2=",l2;
+    endif;
+  endfor;
+endfor;
+
+-----------------------------------------------------------------------------
+-- Bug in IsHomog(LIST) did not check first element!
+
+use QQ[x];
+if IsHomog([x+1]) then error("IsHomog([x+1]) gave wrong answer!"); endif;
+
+-----------------------------------------------------------------------------
+-- Oldish bug in elim (failed to check for zero ideal, see Redmine #447)
+
+use R::=QQ[x,y,z,t];
+I := ideal(zero(R));
+Lista := [x,y];
+NoPrint := elim(Lista,I);
+
+-----------------------------------------------------------------------------
+-- Dangling reference bug in (some) RingHoms: see Redmine #190
+
+R := NewPolyRing(QQ, "x");
+phi := CoeffEmbeddingHom(R);
+R := "delete ring";
+phi(123);
+
+for I := 1 to 9 do
+  print I;
+  P ::= QQ[x,y,z];
+  phi := CoeffEmbeddingHom(P);
+endfor;
+println;
+
+-----------------------------------------------------------------------------
+-- ILogBase had a subtle bug (caused by fp rounding): see Redmine 776
+
+J := 38478521676166483490305685030818526171181904643421577733382705346571894686085840002453315602443444444401/38478521676166483605741250097796497856523182881313912761668255277583712667477744737709244389536050430475222646784;
+if FloorLog10(J) <> -10 then println "FloorLogBase bug: redmine 776"; endif
+if FloorLogBase(J,10) <> -10 then println "FloorLogBase bug: redmine 776"; endif
+
+-----------------------------------------------------------------------------
+-- Product of ideal, the first one with monomial gens: see Redmine 870
+
+-- feedback by Vadim Tropashko (2016-04-25?)
+use QQ[x,y];
+ideal(x,y)*ideal(x-1,y-1)*ideal(x-2,y-2) = ideal(y^3 -3*y^2 +2*y, x -y);
+-- GBasis used to give: [y^3, x*y^2, x^2*y, x^3]
+-- similar problem occurred with MinGens, after "modifying" the generators
+-- of an ideal, without properly tidying up the other fields
+
+-----------------------------------------------------------------------------
+-- Det of 0x0 matrix: see Redmine 956
+
+if det(IdentityMat(ZZ,0)) <> 1 then println "det of 0x0 matrix; redmine 956"; endif;
+
+-----------------------------------------------------------------------------
+-- SqFreeFactor over non-prime finite field:  see redmine 981
+
+Fp ::= ZZ/(32003);
+use Fpt ::= Fp[t];
+// factor(t^3+t-5); --> irreducible
+K := Fpt/ideal(t^3+t-5);
+use K[x];
+f := x^2 +(t^2)*x +(-1);
+facs := SqFreeFactor(f);
+if facs.multiplicities <> [1] or f <> facs.factors[1]*facs.RemainingFactor then
+  println "SqFreeFactor wrong";
+endif;
+
+------------------------------------------------------------------
+-- Stupid problem in IsRadical
+use QQ[x,y];
+IsRadical(ideal(x+y,x-x));
+
+------------------------------------------------------------------
+-- Used to reject negative numbers (for 1st arg).
+FacInfo := SmoothFactor(-9,3);
+
+------------------------------------------------------------------
+-- Used to fail with zero generator.
+use R ::= QQ[x,y];
+I1 := ideal(x,zero(R));
+I2 := ideal(y);
+intersect(I1,I2); --> ERROR
+
+------------------------------------------------------------------
+-- Handled incorrectly a trivial case
+use QQ[x];
+if RealRoots(x, 1, [1,2]) <> [] then println "RealRoots(x,1,[1,2]) wrong"; endif;
+if RealRoots(x, 1, [0,1]) = [] then println "RealRoots(x,1,[0,1]) wrong"; endif;
+if RealRoots(x, 1, [-1,0]) = [] then println "RealRoots(x,1,[-1,0]) wrong"; endif;
+if RealRoots(x, 1, [-2,-1]) <> [] then println "RealRoots(x,1,[-2,-1]) wrong"; endif;
+
+------------------------------------------------------------------
+-- Redmine 1189
+
+M := ColMat([-2,-5]);
+if HilbertBasisKer(M) <> [] then error("Redmine 1189 bug has returned"); endif;
